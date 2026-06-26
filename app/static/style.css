@@ -1,0 +1,218 @@
+/* アプリ全体で共通利用する色・影 */
+:root {
+    --ink: #182226;
+    --muted: #647277;
+    --paper: #f4f1e9;
+    --line: #dcd8cf;
+    --green: #176b58;
+    --green-dark: #0f4d40;
+    --shadow: 0 18px 50px rgba(38, 48, 48, 0.10);
+}
+
+* { box-sizing: border-box; }
+
+/* ページ全体と共通テキスト */
+body {
+    margin: 0;
+    min-height: 100vh;
+    color: var(--ink);
+    background:
+        radial-gradient(circle at 12% 12%, rgba(240, 185, 77, 0.18), transparent 25rem),
+        radial-gradient(circle at 90% 85%, rgba(23, 107, 88, 0.12), transparent 28rem),
+        var(--paper);
+    font-family: "Yu Gothic UI", "Hiragino Sans", sans-serif;
+}
+button, input { font: inherit; }
+a { color: var(--green); }
+.site-header {
+    height: 72px;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.brand {
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 1.2rem;
+    font-weight: 800;
+}
+.page-shell { max-width: 1180px; margin: 0 auto; padding: 36px 24px 72px; }
+h1, h2, p { margin-top: 0; }
+h1 {
+    margin-bottom: 18px;
+    font-size: clamp(2.2rem, 5vw, 4.6rem);
+    line-height: 1.08;
+    letter-spacing: -0.045em;
+}
+h2 { font-size: 1.45rem; }
+.eyebrow {
+    display: block;
+    margin-bottom: 12px;
+    color: var(--green);
+    font-size: .76rem;
+    font-weight: 800;
+    letter-spacing: .16em;
+}
+.lead { font-size: 1.15rem; }
+.muted { color: var(--muted); line-height: 1.75; }
+.card {
+    padding: 30px;
+    border: 1px solid rgba(220, 216, 207, .9);
+    border-radius: 24px;
+    background: rgba(255, 253, 248, .94);
+    box-shadow: var(--shadow);
+}
+
+/* ログイン画面 */
+.auth-layout {
+    min-height: 670px;
+    display: grid;
+    grid-template-columns: 1.1fr .8fr;
+    gap: 70px;
+    align-items: center;
+}
+.hero-panel p { max-width: 580px; color: var(--muted); font-size: 1.1rem; line-height: 1.8; }
+.feature-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+.feature-list span {
+    padding: 9px 14px;
+    border: 1px solid #c6d7d2;
+    border-radius: 999px;
+    color: var(--green-dark);
+    background: rgba(255, 255, 255, .5);
+    font-size: .86rem;
+}
+label { display: block; margin: 18px 0 7px; font-size: .86rem; font-weight: 700; }
+input {
+    width: 100%;
+    padding: 13px 15px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    outline: none;
+    background: white;
+}
+input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(23, 107, 88, .12); }
+.button { border: 0; border-radius: 12px; cursor: pointer; font-weight: 800; }
+.button:disabled { cursor: not-allowed; opacity: .5; }
+.button-primary { padding: 14px 18px; color: white; background: var(--green); }
+.button-primary:hover { background: var(--green-dark); }
+.button-wide { width: 100%; margin-top: 18px; }
+.button-ghost { padding: 10px 14px; color: var(--ink); border: 1px solid var(--line); background: transparent; }
+.button-small { font-size: .82rem; }
+.auth-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin: 25px 0 18px;
+    padding: 5px;
+    border-radius: 13px;
+    background: #efede7;
+}
+.auth-tab { padding: 10px; border: 0; border-radius: 9px; color: var(--muted); background: transparent; cursor: pointer; }
+.auth-tab.active { color: var(--green-dark); background: white; box-shadow: 0 3px 12px rgba(30, 50, 45, .08); font-weight: 800; }
+.auth-panel { display: none; }
+.auth-panel.active { display: block; }
+
+/* カメラ映像・顔位置ガイド */
+.camera-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border-radius: 18px;
+    background: #17211f;
+}
+.camera-frame video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.camera-guide { position: absolute; inset: 11% 24%; border: 2px solid rgba(255, 255, 255, .75); border-radius: 50%; pointer-events: none; }
+.camera-placeholder {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    color: rgba(255, 255, 255, .72);
+    text-align: center;
+    background: #26332f;
+}
+.camera-placeholder.hidden { display: none; }
+.status-text { min-height: 23px; margin: 12px 0 0; color: var(--muted); font-size: .88rem; text-align: center; }
+.message { display: none; margin-top: 14px; padding: 11px 13px; border-radius: 10px; font-size: .88rem; }
+.message.visible { display: block; }
+.message.error { color: #8f3023; background: #fae2dc; }
+.message.success { color: var(--green-dark); background: #dceee9; }
+.auth-link { margin: 20px 0 0; color: var(--muted); font-size: .9rem; text-align: center; }
+
+/* ユーザー登録画面 */
+.register-layout { display: grid; grid-template-columns: .82fr 1.18fr; gap: 50px; align-items: start; }
+.form-card { margin-top: 28px; }
+.issued-id-note {
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    border-radius: 14px;
+    color: var(--green-dark);
+    background: #e4efeb;
+}
+.issued-id-note span { color: var(--muted); }
+.camera-large { max-height: 520px; }
+
+/* モード選択画面 */
+.dashboard-heading { margin: 40px 0 55px; }
+.dashboard-heading h1 { max-width: 850px; font-size: clamp(2rem, 4vw, 3.7rem); }
+.mode-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.mode-card {
+    min-height: 330px;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 24px;
+    color: var(--ink);
+    text-decoration: none;
+    transition: transform 180ms ease, box-shadow 180ms ease;
+}
+.mode-card:hover { transform: translateY(-6px); box-shadow: var(--shadow); }
+.mode-interview { background: #f4c86e; }
+.mode-photo { background: #b8d2ca; }
+.mode-service { background: #b8cade; }
+.mode-number { margin-bottom: auto; font-size: .82rem; font-weight: 900; }
+.mode-card h2 { margin: 55px 0 12px; font-size: 2rem; }
+.mode-card p { min-height: 50px; line-height: 1.6; }
+.mode-action { font-weight: 800; }
+
+/* リアルタイム採点画面 */
+.training-heading { display: flex; justify-content: space-between; align-items: end; margin-bottom: 30px; }
+.training-heading h1 { margin: 4px 0 8px; font-size: clamp(2rem, 4vw, 3.4rem); }
+.back-link { display: inline-block; margin-bottom: 28px; text-decoration: none; }
+.score-badge {
+    width: 128px;
+    height: 128px;
+    display: grid;
+    place-content: center;
+    border-radius: 50%;
+    color: white;
+    text-align: center;
+    background: var(--green);
+}
+.score-badge strong { font-size: 2.8rem; line-height: 1; }
+.score-badge span { font-size: .82rem; }
+.training-grid { display: grid; grid-template-columns: 1.5fr .75fr; gap: 24px; align-items: start; }
+.camera-training { aspect-ratio: 16 / 10; }
+.score-row { padding: 16px 0; display: flex; justify-content: space-between; border-bottom: 1px solid var(--line); }
+.score-row strong { color: var(--green); }
+.advice-box { margin-top: 24px; padding: 18px; border-radius: 16px; background: #edf3ef; }
+.advice-box span { color: var(--green); font-size: .72rem; font-weight: 900; letter-spacing: .13em; }
+.advice-box p { margin: 8px 0 0; line-height: 1.6; }
+
+/* 画面幅820px以下では1列表示にしてスマートフォンへ対応する */
+@media (max-width: 820px) {
+    .auth-layout, .register-layout, .training-grid { grid-template-columns: 1fr; }
+    .auth-layout { gap: 35px; }
+    .mode-grid { grid-template-columns: 1fr; }
+    .mode-card { min-height: 240px; }
+    .training-heading { align-items: center; }
+    .score-badge { width: 90px; height: 90px; }
+    .score-badge strong { font-size: 2rem; }
+}

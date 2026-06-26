@@ -1,0 +1,36 @@
+# 仮想環境
+venv/
+.venv/
+
+# Python キャッシュ
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Flask
+instance/
+.webassets-cache
+
+# 環境変数・秘密情報
+.env
+.env.*
+!.env.local
+
+# SQLite DB
+*.db
+*.sqlite
+*.sqlite3
+
+# ログ
+*.log
+
+# OS / エディタ
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# MediaPipe モデル
+# GitHubにモデルを上げたくない場合は、下のコメントを外す
+# face_landmarker.task
