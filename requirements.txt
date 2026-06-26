@@ -1,0 +1,11 @@
+# Webアプリ本体
+flask
+
+# UserモデルとSQLite操作
+flask-sqlalchemy
+
+# ログイン状態のセッション管理
+flask-login
+
+# .envファイルの読み込み
+python-dotenv

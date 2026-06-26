@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}ログイン | Face Practice{% endblock %}
+{% block content %}
+<!-- 左側のアプリ紹介と、右側のログインフォームを並べる -->
+<section class="auth-layout">
+    <!-- アプリの説明エリア -->
+    <div class="hero-panel">
+        <span class="eyebrow">AI FACE TRAINING</span>
+        <h1>表情を整えて、<br>本番に強くなる。</h1>
+        <p>顔認証でログインし、目的に合わせた表情をリアルタイムで練習できます。</p>
+        <div class="feature-list">
+            <span>顔特徴量ログイン</span><span>リアルタイム採点</span><span>モード別アドバイス</span>
+        </div>
+    </div>
+
+    <!-- 認証方法を選ぶログインカード -->
+    <section class="card auth-card">
+        <h2>ログイン</h2>
+        <p class="muted">IDを入力し、認証方法を選んでください。</p>
+        <label for="login-id">ログインID</label>
+        <input id="login-id" autocomplete="username" placeholder="例：student01">
+        <!-- data-panelの値をface-auth.jsが読み、対応するパネルを表示する -->
+        <div class="auth-tabs" role="tablist">
+            <button class="auth-tab active" data-panel="password-panel" type="button">パスワード</button>
+            <button class="auth-tab" data-panel="face-panel" type="button">顔認証</button>
+        </div>
+        <!-- パスワード認証用パネル -->
+        <div id="password-panel" class="auth-panel active">
+            <label for="password">パスワード</label>
+            <input id="password" type="password" autocomplete="current-password">
+            <button id="password-login" class="button button-primary button-wide" type="button">パスワードでログイン</button>
+        </div>
+        <!-- 顔認証用パネル。video要素へブラウザのカメラ映像を表示する -->
+        <div id="face-panel" class="auth-panel">
+            <div class="camera-frame">
+                <video id="face-video" autoplay muted playsinline></video>
+                <div class="camera-guide"></div>
+                <div id="camera-placeholder" class="camera-placeholder">「カメラを開始」を押してください</div>
+            </div>
+            <p id="face-status" class="status-text">IDを入力してカメラを開始します。</p>
+            <button id="start-face-login" class="button button-primary button-wide" type="button">カメラを開始して顔認証</button>
+        </div>
+        <!-- JavaScriptから成功・失敗メッセージを表示する場所 -->
+        <div id="message" class="message" aria-live="polite"></div>
+        <p class="auth-link">初めて使う方は <a href="{{ url_for('auth.register') }}">ユーザー登録</a></p>
+    </section>
+</section>
+{% endblock %}
+{% block scripts %}
+<!-- 本人識別用のface-apiと、認証処理を担当する自作JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/dist/face-api.js"></script>
+<script type="module" src="{{ url_for('static', filename='face-auth.js') }}"></script>
+{% endblock %}
