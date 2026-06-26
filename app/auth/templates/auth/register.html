@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}ユーザー登録 | Face Practice{% endblock %}
+{% block content %}
+<!-- 左側にパスワード、右側に顔登録用カメラを表示する -->
+<section class="register-layout">
+    <div>
+        <span class="eyebrow">FIRST STEP</span>
+        <h1>ユーザー登録</h1>
+        <p class="lead">パスワードと顔の数値を登録します。ログインIDは登録後に自動発行されます。</p>
+        <!-- Flaskがモデルファイルを確認し、存在しない場合だけエラーを表示する -->
+        {% if not model_exists %}<div class="message error visible">face_landmarker.task がありません。</div>{% endif %}
+        <section class="card form-card">
+            <!-- IDは入力させず、DB登録後にU000001形式で自動発行する -->
+            <div class="issued-id-note">
+                <strong>IDは自動発行</strong>
+                <span>例：U000001</span>
+            </div>
+            <label for="register-password">パスワード</label>
+            <input id="register-password" type="password" autocomplete="new-password">
+            <label for="register-password-confirm">パスワード（確認）</label>
+            <input id="register-password-confirm" type="password" autocomplete="new-password">
+        </section>
+    </div>
+
+    <!-- カメラ映像と顔特徴量取得の進行状況を表示する -->
+    <section class="card camera-card">
+        <h2>顔を登録</h2>
+        <p class="muted">正面を向き、明るい場所で撮影してください。</p>
+        <div class="camera-frame camera-large">
+            <video id="register-video" autoplay muted playsinline></video>
+            <div class="camera-guide"></div>
+            <div id="register-placeholder" class="camera-placeholder">まだカメラは開始されていません</div>
+        </div>
+        <p id="register-status" class="status-text">複数フレームを平均して顔の数値を作成します。</p>
+        <button id="register-button" class="button button-primary button-wide" type="button" {% if not model_exists %}disabled{% endif %}>カメラを開始して登録</button>
+        <!-- 登録完了後、ここへ自動発行IDを表示する -->
+        <div id="register-message" class="message" aria-live="polite"></div>
+        <p class="auth-link"><a href="{{ url_for('auth.index') }}">ログインへ戻る</a></p>
+    </section>
+</section>
+{% endblock %}
+{% block scripts %}
+<!-- 登録時もログイン時と同じ本人識別モデルを使用する -->
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/dist/face-api.js"></script>
+<script type="module" src="{{ url_for('static', filename='face-auth.js') }}"></script>
+{% endblock %}

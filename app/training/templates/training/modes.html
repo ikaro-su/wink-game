@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}モード選択 | Face Practice{% endblock %}
+{% block content %}
+<!-- Flaskから受け取ったログインIDと認証方法を表示する -->
+<section class="dashboard-heading">
+    <span class="eyebrow">WELCOME</span>
+    <h1>{{ login_id }} さん、今日は何を練習しますか？</h1>
+    <p class="muted">{% if auth_method == "face" %}顔認証{% elif auth_method == "password" %}パスワード認証{% else %}ユーザー登録{% endif %}でログインしています。</p>
+</section>
+
+<!-- 各リンクのmode値が/training/<mode>へ渡される -->
+<section class="mode-grid">
+    <a class="mode-card mode-interview" href="{{ url_for('training.practice', mode='interview') }}"><span class="mode-number">01</span><h2>就職面接</h2><p>カメラ目線、表情、顔の傾き、位置を採点します。</p><span class="mode-action">練習を始める →</span></a>
+    <a class="mode-card mode-photo" href="{{ url_for('training.practice', mode='photo') }}"><span class="mode-number">02</span><h2>証明写真</h2><p>正面向きと自然な表情を整えます。</p><span class="mode-action">練習を始める →</span></a>
+    <a class="mode-card mode-service" href="{{ url_for('training.practice', mode='service') }}"><span class="mode-number">03</span><h2>接客・営業</h2><p>明るい表情と視線の安定を練習します。</p><span class="mode-action">練習を始める →</span></a>
+</section>
+{% endblock %}
