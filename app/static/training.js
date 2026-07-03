@@ -4,7 +4,6 @@ import { getLandmarker, startCamera, stopCamera } from "./face-core.js";
 const video = document.getElementById("training-video");
 const button = document.getElementById("start-training");
 const placeholder = document.getElementById("training-placeholder");
-const selectedmode = document.getElementById("training-mode");
 let running = false;
 
 // 2つのランドマーク間の距離を計算する。
