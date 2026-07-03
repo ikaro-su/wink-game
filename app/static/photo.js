@@ -4,7 +4,6 @@ import { getLandmarker, startCamera, stopCamera } from "./face-core.js";
 const video = document.getElementById("training-video");
 const button = document.getElementById("start-training");
 const placeholder = document.getElementById("training-placeholder");
-const selectedmode = document.getElementById("training-mode");
 let running = false;
 
 // 2つのランドマーク間の距離を計算する。
@@ -36,28 +35,79 @@ function calculateScores(face) {
     const mouthOpen = distance(face[13], face[14]) / eyeDistance;
     // 鼻が両目の中央からずれているほど、横を向いている可能性が高い。
     const noseOffset = Math.abs(face[1].x - (leftEye.x + rightEye.x) / 2) / eyeDistance;
+    // 視線測定
+    // 水平方向
+    // 左目  
+    const leftEyeRatio =
+        distance(face[133], face[468]) /
+        distance(face[133], face[33]);
+    // 右目
+    const rightEyeRatio =
+        distance(face[473], face[362]) /
+        distance(face[263], face[362]);
+    // 垂直方向
+    // 左目
+    const leftEyeYRatio =
+        distance(face[159], face[468]) /
+        distance(face[159], face[145]);
+    // 右目    
+    const rightEyeYRatio =
+        distance(face[386], face[473]) /
+        distance(face[386], face[374]);
+    // 視線ずれ量数値化
+    // 水平方向
+    const gazeXError =
+        (
+            Math.abs(leftEyeRatio - 0.5) +
+            Math.abs(rightEyeRatio - 0.5)
+        ) / 2;
+    // 垂直方向
+    const gazeYError =
+        (
+            Math.abs(leftEyeYRatio - 0.5) +
+            Math.abs(rightEyeYRatio - 0.5)
+        ) / 2;
+    // 総合化
+    const gazeError =
+        Math.hypot(gazeXError, gazeYError);
 
     // 各測定値を0～100点へ変換する。
     const scores = {
-        gaze: clampScore(100 - noseOffset * 240),
-        smile: clampScore(55 + (mouthWidth - .75) * 110 - mouthOpen * 80),
-        angle: clampScore(100 - tilt * 260 - noseOffset * 110),
-        position: clampScore(100 - centerError * 260),
-        eye: clampScore(45 + eyeOpen * 230),
+        // 正面を見る
+        gaze: clampScore(100 - gazeError * 260),
+        // 真顔評価
+        // 口の開きが少なく、口角が上がり過ぎていない状態を高評価
+        expression: clampScore(100 - Math.abs(mouthWidth - 0.85) * 250 - mouthOpen * 350),
+        // 顔の傾き
+        angle: clampScore(100 - tilt * 300 - noseOffset * 150),
+        // 顔位置
+        position: clampScore(100 - centerError * 280),
+        // 目の開き
+        // 開きすぎ・閉じすぎの両方を減点
+        eye: clampScore(100 - Math.abs(eyeOpen - 0.28) * 450),
     };
+
     // 項目ごとの重みを掛けて合計点を作る。
-    scores.total = Math.round(scores.gaze * .25 + scores.smile * .25 + scores.angle * .2 + scores.position * .2 + scores.eye * .1);
+    
+    scores.total = Math.round(
+        scores.gaze * 0.30 +
+        scores.expression * 0.15 +
+        scores.angle * 0.25 +
+        scores.position * 0.20 +
+        scores.eye * 0.10
+    );
+
 
     // totalを除いた項目を点数順に並べ、最も低い項目名を取得する。
     const weakest = Object.entries(scores).filter(([name]) => name !== "total").sort((a, b) => a[1] - b[1])[0][0];
 
     // 最も低い項目に対応する改善アドバイス。
     const advice = {
-        gaze: "画面ではなく、カメラのレンズを見る意識を持ちましょう。",
-        smile: "口角を少しだけ上げて、自然な表情を作りましょう。",
-        angle: "顔を正面に戻し、左右の傾きを小さくしましょう。",
+        gaze: "正面から、カメラのレンズを見続けましょう。",
+        expression: "口を閉じて、真剣な表情を保ちましょう",
+        angle: "適切に顎を引き、顔の向きをまっすぐに戻しましょう。",
         position: "顔が中央のガイドに入るように位置を調整しましょう。",
-        eye: "目を自然に開き、まばたき後も視線を戻しましょう。",
+        eye: "目を自然な大きさに開きましょう。",
     };
     return { ...scores, advice: advice[weakest] };
 }
@@ -66,7 +116,7 @@ function renderScores(scores) {
     // calculateScoresで作った点数を画面の各要素へ反映する。
     document.getElementById("total-score").textContent = scores.total;
     document.getElementById("gaze-score").textContent = scores.gaze;
-    document.getElementById("smile-score").textContent = scores.smile;
+    document.getElementById("expression-score").textContent = scores.expression;
     document.getElementById("angle-score").textContent = scores.angle;
     document.getElementById("position-score").textContent = scores.position;
     document.getElementById("eye-score").textContent = scores.eye;

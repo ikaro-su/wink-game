@@ -44,9 +44,9 @@ def modes():
     )
 
 
-@training.get("/<mode>")
+@training.get("training/<mode>")
 @login_required
-def practice(mode):
+def training_practice(mode):
     """URLで指定されたモードのリアルタイム採点画面を表示する。"""
 
     # 例：/training/interviewならinterviewの設定を取得する。
@@ -58,6 +58,42 @@ def practice(mode):
 
     return render_template(
         "training/training.html",
+        mode=mode,
+        selected_mode=selected_mode,
+    )
+
+@training.get("service/<mode>")
+@login_required
+def service_practice(mode):
+    """URLで指定されたモードのリアルタイム採点画面を表示する。"""
+
+    # 例：/training/interviewならinterviewの設定を取得する。
+    selected_mode = AVAILABLE_MODES.get(mode)
+
+    # 存在しないモード名の場合は、モード選択画面へ戻す。
+    if selected_mode is None:
+        return redirect(url_for("training.modes"))
+
+    return render_template(
+        "training/service.html",
+        mode=mode,
+        selected_mode=selected_mode,
+    )
+
+@training.get("photo/<mode>")
+@login_required
+def photo_practice(mode):
+    """URLで指定されたモードのリアルタイム採点画面を表示する。"""
+
+    # 例：/training/interviewならinterviewの設定を取得する。
+    selected_mode = AVAILABLE_MODES.get(mode)
+
+    # 存在しないモード名の場合は、モード選択画面へ戻す。
+    if selected_mode is None:
+        return redirect(url_for("training.modes"))
+
+    return render_template(
+        "training/photos.html",
         mode=mode,
         selected_mode=selected_mode,
     )
