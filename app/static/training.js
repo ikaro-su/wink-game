@@ -36,10 +36,45 @@ function calculateScores(face) {
     const mouthOpen = distance(face[13], face[14]) / eyeDistance;
     // 鼻が両目の中央からずれているほど、横を向いている可能性が高い。
     const noseOffset = Math.abs(face[1].x - (leftEye.x + rightEye.x) / 2) / eyeDistance;
+    // 視線測定
+    // 水平方向
+    // 左目  
+    const leftEyeRatio =
+        distance(face[133], face[468]) /
+        distance(face[133], face[33]);
+    // 右目
+    const rightEyeRatio =
+        distance(face[473], face[362]) /
+        distance(face[263], face[362]);
+    // 垂直方向
+    // 左目
+    const leftEyeYRatio =
+        distance(face[159], face[468]) /
+        distance(face[159], face[145]);
+    // 右目    
+    const rightEyeYRatio =
+        distance(face[386], face[473]) /
+        distance(face[386], face[374]);
+    // 視線ずれ量数値化
+    // 水平方向
+    const gazeXError =
+        (
+            Math.abs(leftEyeRatio - 0.5) +
+            Math.abs(rightEyeRatio - 0.5)
+        ) / 2;
+    // 垂直方向
+    const gazeYError =
+        (
+            Math.abs(leftEyeYRatio - 0.5) +
+            Math.abs(rightEyeYRatio - 0.5)
+        ) / 2;
+    // 総合化
+    const gazeError =
+        Math.hypot(gazeXError, gazeYError);
 
     // 各測定値を0～100点へ変換する。
     const scores = {
-        gaze: clampScore(100 - noseOffset * 240),
+        gaze: clampScore(100 - gazeError * 260),
         smile: clampScore(55 + (mouthWidth - .75) * 110 - mouthOpen * 80),
         angle: clampScore(100 - tilt * 260 - noseOffset * 110),
         position: clampScore(100 - centerError * 260),
