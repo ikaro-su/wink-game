@@ -11,11 +11,13 @@ const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 
 // 点数を0～100の整数へ収める。
 const clampScore = (value) => Math.round(Math.max(0, Math.min(100, value)));
+
 // 顔全体のランドマークから中心・大きさ・縦横比を求める。
 function getFullFaceStats(face) {
-    const points = face.filter((point) => point);
-    const xs = points.map((point) => point.x);
-    const ys = points.map((point) => point.y);
+    if (!face || face.length === 0) return null;
+
+    const xs = face.map((point) => point.x);
+    const ys = face.map((point) => point.y);
 
     const minX = Math.min(...xs);
     const maxX = Math.max(...xs);
@@ -26,61 +28,157 @@ function getFullFaceStats(face) {
     const height = maxY - minY;
 
     return {
-        centerX: xs.reduce((sum, x) => sum + x, 0) / xs.length,
-        centerY: ys.reduce((sum, y) => sum + y, 0) / ys.length,
+        centerX: (minX + maxX) / 2,
+        centerY: (minY + maxY) / 2,
         width,
         height,
         size: width * height,
-        aspectRatio: height / width,
+        aspectRatio: width > 0 ? height / width : 0,
     };
 }
+
 function calculateScores(face) {
     // 接客では顔全体のランドマークも使う。
     const fullFace = getFullFaceStats(face);
 
-    const leftEye = { x: (face[33].x + face[133].x) / 2, y: (face[159].y + face[145].y) / 2 };
-    const rightEye = { x: (face[362].x + face[263].x) / 2, y: (face[386].y + face[374].y) / 2 };
+    if (!fullFace) {
+        return {
+            total: 0,
+            gaze: 0,
+            smile: 0,
+            angle: 0,
+            position: 0,
+            eye: 0,
+            advice: "顔全体がカメラに映るようにしてください。",
+        };
+    }
+
+    // MediaPipeのランドマーク番号から左右の目の中心を求める。
+    const leftEye = {
+        x: (face[33].x + face[133].x) / 2,
+        y: (face[159].y + face[145].y) / 2
+    };
+
+    const rightEye = {
+        x: (face[362].x + face[263].x) / 2,
+        y: (face[386].y + face[374].y) / 2
+    };
+
+    // 両目の距離を基準値として使うと、カメラとの距離の影響を小さくできる。
     const eyeDistance = distance(leftEye, rightEye);
-    // 鼻先が画面中央からどれだけ離れているか。
-    const centerError = Math.hypot(fullFace.centerX - 0.5, fullFace.centerY - 0.5);
+
+    if (eyeDistance <= 0) {
+        return {
+            total: 0,
+            gaze: 0,
+            smile: 0,
+            angle: 0,
+            position: 0,
+            eye: 0,
+            advice: "顔全体がカメラに映るようにしてください。",
+        };
+    }
+
+    // 顔全体の中心が画面中央からどれだけ離れているか。
+    const centerError = Math.hypot(
+        fullFace.centerX - 0.5,
+        fullFace.centerY - 0.5
+    );
+
+    // 顔全体の大きさが基準からどれだけ離れているか。
     const sizeError = Math.abs(fullFace.size - 0.16);
 
     // 左右の目の高さの差から、顔の傾きを求める。
     const tilt = Math.abs(leftEye.y - rightEye.y) / eyeDistance;
 
+    const leftEyeWidth = distance(face[33], face[133]);
+    const rightEyeWidth = distance(face[362], face[263]);
+
+    // 目の横幅が取得できない場合の0除算を防ぐ。
+    if (leftEyeWidth <= 0 || rightEyeWidth <= 0) {
+        return {
+            total: 0,
+            gaze: 0,
+            smile: 0,
+            angle: 0,
+            position: 0,
+            eye: 0,
+            advice: "顔全体がカメラに映るようにしてください。",
+        };
+    }
+
     // 上まぶたと下まぶたの距離から、目の開き具合を求める。
-    const eyeOpen = (
-        distance(face[159], face[145]) / distance(face[33], face[133]) +
-        distance(face[386], face[374]) / distance(face[362], face[263])
-    ) / 2;
+    const leftEyeOpen = distance(face[159], face[145]) / leftEyeWidth;
+    const rightEyeOpen = distance(face[386], face[374]) / rightEyeWidth;
+    const eyeOpen = (leftEyeOpen + rightEyeOpen) / 2;
+
     // 口の横幅と縦幅から、表情・口の開きを評価する。
     const mouthWidth = distance(face[61], face[291]) / eyeDistance;
     const mouthOpen = distance(face[13], face[14]) / eyeDistance;
+
     // 鼻が両目の中央からずれているほど、横を向いている可能性が高い。
-    const noseOffset = Math.abs(face[1].x - (leftEye.x + rightEye.x) / 2) / eyeDistance;
+    const noseOffset = Math.abs(
+        face[1].x - (leftEye.x + rightEye.x) / 2
+    ) / eyeDistance;
 
     // 各測定値を0～100点へ変換する。
     const scores = {
-        gaze: clampScore(100 - noseOffset * 240),
-        smile: clampScore(55 + (mouthWidth - 0.75) * 120 - mouthOpen * 60),
-        angle: clampScore(100 - tilt * 180 - noseOffset * 50 - Math.abs(fullFace.aspectRatio - 1.25) * 25),
-        position: clampScore(100 - centerError * 260 - sizeError * 180),
-        eye: clampScore(45 + eyeOpen * 200 + (mouthWidth - 0.75) * 60 - mouthOpen * 40 - centerError * 40),
+        gaze: clampScore(
+            100 - noseOffset * 240
+        ),
+
+        smile: clampScore(
+            55 +
+            (mouthWidth - 0.75) * 120 -
+            mouthOpen * 60
+        ),
+
+        // 顔の傾きと横向き具合から評価する。
+        // 顔の縦横比は個人差があるため使用しない。
+        angle: clampScore(
+            100 -
+            tilt * 180 -
+            noseOffset * 50
+        ),
+
+        // 顔全体の中心位置と大きさを評価する。
+        position: clampScore(
+            100 -
+            centerError * 260 -
+            sizeError * 180
+        ),
+
+        // 目の開きと口元から、明るい表情を評価する。
+        eye: clampScore(
+            30 +
+            eyeOpen * 100 +
+            (mouthWidth - 0.75) * 50
+        ),
     };
+
     // 項目ごとの重みを掛けて合計点を作る。
-    scores.total = Math.round(scores.gaze * 0.3 + scores.smile * 0.3 + scores.angle * 0.15 + scores.position * 0.15 + scores.eye * 0.1);
+    scores.total = Math.round(
+        scores.gaze * 0.3 +
+        scores.smile * 0.3 +
+        scores.angle * 0.15 +
+        scores.position * 0.15 +
+        scores.eye * 0.1
+    );
 
     // totalを除いた項目を点数順に並べ、最も低い項目名を取得する。
-    const weakest = Object.entries(scores).filter(([name]) => name !== "total").sort((a, b) => a[1] - b[1])[0][0];
+    const weakest = Object.entries(scores)
+        .filter(([name]) => name !== "total")
+        .sort((a, b) => a[1] - b[1])[0][0];
 
     // 最も低い項目に対応する改善アドバイス。
     const advice = {
         gaze: "お客様を見るように、カメラのレンズに視線を向けましょう。",
         smile: "口角を少し上げて、やわらかい笑顔を意識しましょう。",
-        angle: "顔を正面に向け、姿勢をまっすぐにしましょう。",
+        angle: "顔の傾きを小さくし、正面を向くことを意識しましょう。",
         position: "顔全体がガイドの中央に入るように位置を調整しましょう。",
         eye: "目を自然に開き、明るく落ち着いた表情を意識しましょう。",
     };
+
     return { ...scores, advice: advice[weakest] };
 }
 
@@ -102,9 +200,15 @@ async function analyzeLoop() {
     // runningがtrueの間、約120ミリ秒ごとに顔を分析する。
     while (running) {
         const result = landmarker.detectForVideo(video, performance.now());
+
         // 顔を1人検出できた場合だけ採点する。
-        if (result.faceLandmarks.length === 1) renderScores(calculateScores(result.faceLandmarks[0]));
-        else document.getElementById("training-advice").textContent = "顔全体がガイドの中に入るようにしてください。";
+        if (result.faceLandmarks.length === 1) {
+            renderScores(calculateScores(result.faceLandmarks[0]));
+        } else {
+            document.getElementById("training-advice").textContent =
+                "顔全体がガイドの中に入るようにしてください。";
+        }
+
         await new Promise((resolve) => setTimeout(resolve, 120));
     }
 }
@@ -117,8 +221,10 @@ button.addEventListener("click", async () => {
         button.textContent = "カメラを開始";
         return;
     }
+
     button.disabled = true;
     button.textContent = "カメラ準備中...";
+
     try {
         // カメラ開始後、解析ループを動かす。
         await startCamera(video);
@@ -127,7 +233,8 @@ button.addEventListener("click", async () => {
         button.textContent = "採点を終了";
         analyzeLoop();
     } catch (error) {
-        document.getElementById("training-advice").textContent = error.message || "カメラを開始できませんでした。";
+        document.getElementById("training-advice").textContent =
+            error.message || "カメラを開始できませんでした。";
         button.textContent = "もう一度試す";
     } finally {
         button.disabled = false;
