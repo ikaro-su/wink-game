@@ -19,7 +19,7 @@ auth = Blueprint(
 
 @auth.get("/")
 def index():
-    """ログイン画面を表示する。"""
+    # ログイン画面を表示する。
 
     # すでにログインしている場合、ログイン画面は表示せずモード選択へ進む。
     if current_user.is_authenticated:
@@ -29,7 +29,7 @@ def index():
 
 @auth.route("/register", methods=["GET", "POST"])
 def register():
-    """GETでは登録画面、POSTではユーザーデータの登録を行う。"""
+    # GETでは登録画面、POSTではユーザーデータの登録を行う。
 
     # 設定ファイルで指定したMediaPipeモデルのパスを取得する。
     model_path = current_app.config["FACE_LANDMARKER_MODEL"]
@@ -114,7 +114,7 @@ def register():
 
 @auth.post("/api/password-login")
 def password_login():
-    """IDとパスワードを使ってログインするAPI。"""
+    #IDとパスワードを使ってログインするAPI。#
 
     data = request.get_json(silent=True) or {}
     login_id = str(data.get("login_id", "")).strip()
@@ -131,61 +131,34 @@ def password_login():
     session["auth_method"] = "password"
     return jsonify(success=True, redirect=url_for("training.modes"))
 
-
-@auth.get("/api/users/<login_id>/face")
-def registered_face(login_id):
-    """指定IDの登録済み顔特徴量をブラウザへ返す。"""
-
-    user = User.find_by_login_id(login_id.strip())
-
-    if user is None:
-        return jsonify(success=False, message="そのIDは登録されていません。"), 404
-
-    # DBではJSON文字列なので、Pythonのリストへ戻す。
-    face_embedding = json.loads(user.face_embedding)
-
-    # 古い形式の顔データが混ざっていないか再確認する。
-    valid_face_templates = (
-        isinstance(face_embedding, list)
-        and len(face_embedding) >= 5
-        and all(
-            isinstance(template, list) and len(template) == 128
-            for template in face_embedding
-        )
-    )
-    if not valid_face_templates:
-        return jsonify(
-            success=False,
-            message="顔認証方式が更新されました。このユーザーは再登録が必要です。",
-        ), 409
-
-    # 現在の方式では、この登録済み特徴量をブラウザ側で比較する。
-    return jsonify(success=True, face_embedding=face_embedding)
-
-
 @auth.post("/api/face-login-complete")
 def face_login_complete():
-    """ブラウザ側の顔比較が成功した後、ログイン状態を作るAPI。"""
+    #顔比較
 
     data = request.get_json(silent=True) or {}
     login_id = str(data.get("login_id", "")).strip()
-    similarity = data.get("similarity")
-    user = User.find_by_login_id(login_id)
+    current_embedding = data.get("currentEmbedding")
+    #指定IDの登録済み顔特徴量
+    user = User.find_by_login_id(login_id.strip())
+   
 
     if user is None:
         return jsonify(success=False, message="そのIDは登録されていません。"), 404
-
+    comparison = compare_embeddings(
+        json.loads(user.face_embedding),
+        current_embedding,
+    )
     try:
         # JSONから届いた類似度を小数へ変換する。
-        similarity = float(similarity)
+        similarity = float(comparison["similarity"])
     except (TypeError, ValueError):
         return jsonify(success=False, message="類似度が正しくありません。"), 400
 
     # 類似度が65%未満ならログインを拒否する。
-    # 注意：この値はブラウザから届くため、本番用途ではサーバー側比較が必要。
-    if similarity < 0.65:
-        return jsonify(success=False, message="顔が一致しませんでした。"), 401
-
+    if not comparison["matched"]:
+        return jsonify(
+            success=False,message=f"顔が一致しませんでした（{comparison['passedSamples']} / 7回一致）。",
+        ), 401
     # ここが顔認証ログインの最終成功地点。
     # Flask-Loginがログイン状態をセッションへ保存する。
     login_user(user)
@@ -195,8 +168,8 @@ def face_login_complete():
 
 @auth.get("/face-model")
 def face_model():
-    """MediaPipeが使用するface_landmarker.taskをブラウザへ配信する。"""
-
+    #MediaPipeが使用するface_landmarker.taskをブラウザへ配信する。#
+    
     model_path = current_app.config["FACE_LANDMARKER_MODEL"]
     if not model_path.exists():
         return jsonify(message="face_landmarker.task がありません。"), 404
@@ -205,8 +178,65 @@ def face_model():
 
 @auth.post("/logout")
 def logout():
-    """Flask-LoginとFlaskセッションの両方を削除してログアウトする。"""
+    #Flask-LoginとFlaskセッションの両方を削除してログアウトする。
 
     logout_user()
     session.clear()
     return redirect(url_for("auth.index"))
+
+import math
+
+def euclidean_distance(a, b):
+    if not isinstance(a, list) or not isinstance(b, list) or len(a) != len(b):
+        return float("inf")
+
+    return math.sqrt(
+        sum((value_a - value_b) ** 2 for value_a, value_b in zip(a, b))
+    )
+
+
+def compare_embeddings(registered_templates, current_templates):
+    if (
+        not isinstance(registered_templates, list)
+        or not isinstance(current_templates, list)
+        or len(registered_templates) < 5
+        or len(current_templates) < 5
+    ):
+        return {
+            "matched": False,
+            "similarity": 0,
+            "passedSamples": 0,
+        }
+
+    nearest_distances = []
+
+    for current in current_templates:
+        distances = [
+            euclidean_distance(registered, current)
+            for registered in registered_templates
+        ]
+
+        nearest_distances.append(min(distances))
+
+    passed_samples = len([
+        distance
+        for distance in nearest_distances
+        if distance <= 0.36
+    ])
+
+    average_distance = sum(nearest_distances) / len(nearest_distances)
+
+    worst_distance = max(nearest_distances)
+
+    similarity = max(0, min(1, 1 - average_distance))
+
+    return {
+        "matched": (
+            passed_samples == len(current_templates)
+            and average_distance <= 0.32
+            and worst_distance <= 0.36
+        ),
+        "similarity": similarity,
+        "passedSamples": passed_samples,
+        "worstDistance": worst_distance,
+    }
