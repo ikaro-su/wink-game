@@ -12,9 +12,14 @@
     <header class="site-header">
         <a class="brand" href="{{ url_for('auth.index') }}">Face Practice</a>
         {% if current_user.is_authenticated %}
-            <form action="{{ url_for('auth.logout') }}" method="post">
-                <button class="button button-ghost button-small" type="submit">ログアウト</button>
-            </form>
+            <div class="header-actions">
+                <form action="{{ url_for('auth.logout') }}" method="post">
+                    <button class="button button-ghost button-small" type="submit">ログアウト</button>
+                </form>
+                <form action="{{ url_for('auth.reauth_view') }}" method="get">
+                    <button class="button button-ghost button-small" type="submit">パスワード変更</button>
+                </form>
+            </div>
         {% endif %}
     </header>
 

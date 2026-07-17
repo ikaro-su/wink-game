@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.app import db
 from app.auth.models import User
+from flask_login import login_required
 
 
 # ユーザー登録・ログイン・ログアウトをまとめるBlueprint
@@ -240,3 +241,109 @@ def compare_embeddings(registered_templates, current_templates):
         "passedSamples": passed_samples,
         "worstDistance": worst_distance,
     }
+
+
+@auth.get("/reauth")
+@login_required
+def reauth_view():
+    # 再認証画面を表示する
+    # 認証中のユーザー情報をそのまま利用
+    model_path = current_app.config["FACE_LANDMARKER_MODEL"]
+    return render_template(
+        "auth/reauth.html",
+        login_id=current_user.login_id,
+        model_exists=model_path.exists()
+    )
+
+
+@auth.post("/api/reauth-password")
+@login_required
+def reauth_password():
+    # 再認証（パスワード）を行うAPI
+    data = request.get_json(silent=True) or {}
+    password = str(data.get("password", ""))
+
+    if not current_user.verify_password(password):
+        return jsonify(success=False, message="パスワードが違います。"), 401
+
+    # セッションに本人確認成功フラグをセット
+    session["reauth_passed"] = True
+    return jsonify(success=True, redirect=url_for("auth.change_password_view"))
+
+
+@auth.post("/api/reauth-face")
+@login_required
+def reauth_face():
+    # 再認証（顔）を行うAPI
+    data = request.get_json(silent=True) or {}
+    current_embedding = data.get("currentEmbedding")
+
+    comparison = compare_embeddings(
+        json.loads(current_user.face_embedding),
+        current_embedding,
+    )
+    
+    try:
+        similarity = float(comparison["similarity"])
+    except (TypeError, ValueError):
+        return jsonify(success=False, message="類似度が正しくありません。"), 400
+
+    if not comparison["matched"]:
+        return jsonify(
+            success=False,
+            message=f"顔が一致しませんでした（{comparison['passedSamples']} / 7回一致）。"
+        ), 401
+
+    # セッションに本人確認成功フラグをセット
+    session["reauth_passed"] = True
+    return jsonify(success=True, redirect=url_for("auth.change_password_view"))
+
+
+@auth.get("/change-password")
+@login_required
+def change_password_view():
+    # 新しいパスワードを入力する画面を表示する
+    # 本人確認フラグがない場合は、本人確認画面へ強制送還
+    if not session.get("reauth_passed"):
+        return redirect(url_for("auth.reauth_view"))
+        
+    return render_template("auth/change_password.html")
+
+
+@auth.post("/api/change_password")
+@login_required
+def change_password_action():
+    # 実際にパスワードを更新する（フォーム送信 / JSON送信どちらでも対応可能）
+    if not session.get("reauth_passed"):
+        return jsonify(success=False, message="セッションの有効期限が切れているか、本人確認が完了していません。"), 403
+
+    # 今回はJSからのJSON送信として実装（統一性のため）
+    data = request.get_json(silent=True) or {}
+    new_password = str(data.get("new_password", ""))
+    new_password_confirm = str(data.get("new_password_confirm", ""))
+
+    if not new_password:
+        return jsonify(success=False, message="新しいパスワードを入力してください。"), 400
+
+    if new_password != new_password_confirm:
+        return jsonify(success=False, message="確認用パスワードが一致しません。"), 400
+
+    try:
+        # パスワードの更新（setterにより自動でハッシュ化されます）
+        current_user.password = new_password
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message="パスワードの更新に失敗しました。"), 500
+
+    # 本人確認フラグを消費して消去
+    session.pop("reauth_passed", None)
+    
+    return jsonify(success=True, redirect=url_for("auth.change_success"))
+
+
+@auth.get("/change-success")
+@login_required
+def change_success():
+    # 変更完了画面を表示する
+    return render_template("auth/change_success.html")
