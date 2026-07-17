@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}パスワード変更完了 | Face Practice{% endblock %}
+{% block content %}
+<div class="auth-container text-center">
+    <h2>パスワード変更完了</h2>
+    <p class="success-text">パスワードの変更が正常に完了しました。</p>
+    <p>次回ログイン時から、新しいパスワードが有効になります。</p>
+    
+    <div style="margin-top: 2rem;">
+        <a class="button button-primary button-wide" href="{{ url_for('training.modes') }}" class="btn">メニュー（モード選択）へ戻る</a>
+    </div>
+</div>
+{% endblock %}
