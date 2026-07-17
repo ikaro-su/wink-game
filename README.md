@@ -1,55 +1,32 @@
-# Face Practice
+実行手順　
 
-Flask、SQLAlchemy、Flask-Login、ブラウザ版AIを利用した顔認証・表情採点アプリです。
+注意事項
+--------
 
-## 処理の役割
+・初回起動時にwink_app.dbが自動作成されます。
+・ユーザー登録時にログインIDが自動発行されます。
+・発行されたIDは、パスワード認証または顔認証で使用します。
+・顔認証AIの初回読み込みにはインターネット接続が必要です。
+・カメラの使用を確認された場合は「許可」を選択してください。
 
-- `face-api`：顔から本人識別用の128次元特徴量を作成
-- `MediaPipe`：目・鼻・口などのランドマークから表情を採点
-- `Flask`：画面・API・ユーザー登録・ログインを管理
-- `SQLAlchemy`：UserモデルとSQLiteデータベースを接続
-- `Flask-Login`：ログイン状態をセッションで管理
+1.仮想環境を作って入る
+    python -m venv venv
+    .\venv\Scripts\Activate.ps1
+    実行できない場合は、次を実行します。
+    Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 
-各ソースファイルには、処理の流れを追える日本語コメントを記載しています。
+2.wink-gameに入る(ウインクは関係×)
+    cd wink-game
 
-## ファイル構成
+3.必要なライブラリをインストールする
 
-```text
-wink_app/
-├─ app/
-│  ├─ app.py                  アプリケーションファクトリ
-│  ├─ config.py               環境ごとの設定
-│  ├─ auth/
-│  │  ├─ models.py            Userモデル
-│  │  ├─ views.py             登録・ログイン
-│  │  └─ templates/auth/
-│  ├─ training/
-│  │  ├─ views.py             モード選択・採点画面
-│  │  └─ templates/training/
-│  ├─ templates/base.html
-│  └─ static/
-├─ run.py                     直接起動用
-├─ face_landmarker.task
-├─ requirements.txt
-└─ .env.local
-```
+    pip install -r requirements.txt
 
-`C:\Users\I\Downloads\flaskbook-main\flaskbook-main`の構成を参考に、
-アプリケーションファクトリ、設定クラス、Blueprint、モデルを分割しています。
+4.環境設定ファイルを作成する
 
-## 初回準備
+    Copy-Item .env.local .env
 
-```powershell
-cd C:\Users\I\Desktop\Flask\wink_app
-.\venv\Scripts\activate
-pip install -r requirements.txt
-Copy-Item .env.local .env
-```
+5.Flaskアプリを起動する
+    flask run
+    
 
-## 起動
-
-```powershell
-flask run
-```
-
-ブラウザで `http://127.0.0.1:5000` を開きます。
