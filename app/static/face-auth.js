@@ -1,4 +1,4 @@
-import { captureEmbedding, compareEmbeddings, startCamera, stopCamera } from "./face-core.js";
+import { captureEmbedding, startCamera, stopCamera } from "./face-core.js";
 
 // 成功・失敗メッセージを指定されたHTML要素へ表示する
 function showMessage(element, text, type = "error") {
@@ -65,12 +65,12 @@ if (faceLoginButton) {
         if (!loginId) return showMessage(message, "先にログインIDを入力してください。");
         setBusy(faceLoginButton, true, "顔認証の準備中...", "カメラを開始して顔認証");
         try {
-            // 入力IDに保存されている登録済み顔特徴量をFlaskから取得する
-            const registeredResponse = await fetch(`/api/users/${encodeURIComponent(loginId)}/face`);
+            // // 入力IDに保存されている登録済み顔特徴量をFlaskから取得する。
+            // const registeredResponse = await fetch(`/api/users/${encodeURIComponent(loginId)}/face`);
 
-            // registeredResult.face_embeddingに登録済み128次元特徴量×7セットが入る
-            const registeredResult = await registeredResponse.json();
-            if (!registeredResponse.ok) throw new Error(registeredResult.message);
+            // // registeredResult.face_embeddingに登録済み128次元特徴量×7セットが入る。
+            // const registeredResult = await registeredResponse.json();
+            // if (!registeredResponse.ok) throw new Error(registeredResult.message);
 
             // ブラウザのカメラを開始する
             await startCamera(video);
@@ -80,28 +80,24 @@ if (faceLoginButton) {
             const currentEmbedding = await captureEmbedding(video, (count, total) => {
                 status.textContent = `顔を読み取り中... ${count} / ${total}`;
             });
-            // comparisonにmatched、similarity、passedSamples、worstDistanceが入る
-            const comparison = compareEmbeddings(
-                registeredResult.face_embedding,
-                currentEmbedding
-            );
-            const percent = Math.round(comparison.similarity * 100);
-            status.textContent =
-                `類似度 ${percent}%・一致 ${comparison.passedSamples} / 7回`;
-            // matchedがfalseなら、ここで処理を止めてFlaskへ成功通知を送らない
-            if (!comparison.matched) {
-                throw new Error(
-                    `顔が一致しませんでした（厳格判定：${comparison.passedSamples} / 7回一致）。`
-                );
-            }
-            // matchedがtrueの場合だけ、IDと類似度をFlaskへ送信する
+            
+            // comparisonにmatched、similarity、passedSamples、worstDistanceが入る。
+            // const comparison = compareEmbeddings(
+            //     registeredResult.face_embedding,
+            //     currentEmbedding
+            // );
+            // const percent = Math.round(comparison.similarity * 100);
+            // status.textContent =
+            //     `類似度 ${percent}%・一致 ${comparison.passedSamples} / 7回`;
+   
+                        // matchedがtrueの場合だけ、IDと類似度をFlaskへ送信する。
             const completeResponse = await fetch("/api/face-login-complete", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    login_id: loginId,
-                    similarity: comparison.similarity,
-                }),
+                    body: JSON.stringify({
+                        login_id: loginId,
+                        currentEmbedding: currentEmbedding,
+                    }),
             });
             const completeResult = await completeResponse.json();
             // Flask側の類似度判定も成功した場合だけ、この下へ進む

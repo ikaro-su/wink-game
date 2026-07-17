@@ -66,49 +66,49 @@ function euclideanDistance(a, b) {
         }, 0)
     );
 }
+// authのログインするときの比較
+// export function compareEmbeddings(registeredTemplates, currentTemplates) {
+//     if (
+//         !Array.isArray(registeredTemplates) ||
+//         !Array.isArray(currentTemplates) ||
+//         registeredTemplates.length < 5 ||
+//         currentTemplates.length < 5
+//     ) {
+//         return {
+//             matched: false,
+//             similarity: 0,
+//             passedSamples: 0,
+//         };
+//     }
 
-export function compareEmbeddings(registeredTemplates, currentTemplates) {
-    if (
-        !Array.isArray(registeredTemplates) ||
-        !Array.isArray(currentTemplates) ||
-        registeredTemplates.length < 5 ||
-        currentTemplates.length < 5
-    ) {
-        return {
-            matched: false,
-            similarity: 0,
-            passedSamples: 0,
-        };
-    }
+//     const nearestDistances = currentTemplates.map((current) => {
+//         return Math.min(
+//             ...registeredTemplates.map((registered) => {
+//                 return euclideanDistance(registered, current);
+//             })
+//         );
+//     });
 
-    const nearestDistances = currentTemplates.map((current) => {
-        return Math.min(
-            ...registeredTemplates.map((registered) => {
-                return euclideanDistance(registered, current);
-            })
-        );
-    });
+//     const passedSamples = nearestDistances.filter((distance) => distance <= 0.36).length;
 
-    const passedSamples = nearestDistances.filter((distance) => distance <= 0.36).length;
+//     const averageDistance =
+//         nearestDistances.reduce((sum, value) => sum + value, 0) /
+//         nearestDistances.length;
 
-    const averageDistance =
-        nearestDistances.reduce((sum, value) => sum + value, 0) /
-        nearestDistances.length;
+//     const worstDistance = Math.max(...nearestDistances);
 
-    const worstDistance = Math.max(...nearestDistances);
+//     const similarity = Math.max(0, Math.min(1, 1 - averageDistance));
 
-    const similarity = Math.max(0, Math.min(1, 1 - averageDistance));
-
-    return {
-        matched:
-            passedSamples === currentTemplates.length &&
-            averageDistance <= 0.32 &&
-            worstDistance <= 0.36,
-        similarity,
-        passedSamples,
-        worstDistance,
-    };
-}
+//     return {
+//         matched:
+//             passedSamples === currentTemplates.length &&
+//             averageDistance <= 0.32 &&
+//             worstDistance <= 0.36,
+//         similarity,
+//         passedSamples,
+//         worstDistance,
+//     };
+// }
 
 export async function captureEmbedding(video, onProgress) {
     if (!globalThis.faceapi) {
