@@ -33,6 +33,11 @@ a { color: var(--green); }
     align-items: center;
     justify-content: space-between;
 }
+.header-actions {
+    display: flex;
+    gap: 10px;                     /* ボタンとボタンの間のすき間（10px） */
+    align-items: center;
+}
 .brand {
     color: var(--ink);
     text-decoration: none;
