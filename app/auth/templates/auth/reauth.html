@@ -1,18 +1,18 @@
 {% extends "base.html" %}
-{% block title %}ログイン | Face Practice{% endblock %}
+{% block title %}再認証 | Face Practice{% endblock %}
 {% block content %}
-<!-- 左側のアプリ紹介と、右側のログインフォームを並べる -->
-<section class="auth-layout">
-    <!-- アプリの説明エリア -->
-    <div class="hero-panel">
-        <span class="eyebrow">AI FACE TRAINING</span>
-        <h1>表情を整えて、<br>本番に強くなる。</h1>
-        <p>顔認証でログインし、目的に合わせた表情をリアルタイムで練習できます。</p>
-        <div class="feature-list">
-            <span>顔特徴量ログイン</span><span>リアルタイム採点</span><span>モード別アドバイス</span>
-        </div>
-    </div>
-
+<style>
+.card {
+    padding: 30px;
+    border: 1px solid rgba(220, 216, 207, .9);
+    border-radius: 24px;
+    background: rgba(255, 253, 248, .94);
+    box-shadow: var(--shadow);
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+}
+</style>
     <!-- 認証方法を選ぶログインカード -->
     <section class="card auth-card">
         <h2>再認証</h2>
@@ -42,9 +42,7 @@
         </div>
         <!-- JavaScriptから成功・失敗メッセージを表示する場所 -->
         <div id="message" class="message" aria-live="polite"></div>
-        <p class="auth-link">初めて使う方は <a href="{{ url_for('auth.register') }}">ユーザー登録</a></p>
     </section>
-</section>
 {% endblock %}
 {% block scripts %}
 <!-- 本人識別用のface-apiと、認証処理を担当する自作JavaScript -->
