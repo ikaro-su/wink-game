@@ -9,7 +9,7 @@ from app.app import db
 from app.auth.models import User
 
 
-# ユーザー登録・ログイン・ログアウトをまとめるBlueprint。
+# ユーザー登録・ログイン・ログアウトをまとめるBlueprint
 auth = Blueprint(
     "auth",
     __name__,
@@ -21,7 +21,7 @@ auth = Blueprint(
 def index():
     # ログイン画面を表示する。
 
-    # すでにログインしている場合、ログイン画面は表示せずモード選択へ進む。
+    # すでにログインしている場合、ログイン画面は表示せずモード選択へ
     if current_user.is_authenticated:
         return redirect(url_for("training.modes"))
     return render_template("auth/login.html")
@@ -31,28 +31,28 @@ def index():
 def register():
     # GETでは登録画面、POSTではユーザーデータの登録を行う。
 
-    # 設定ファイルで指定したMediaPipeモデルのパスを取得する。
+    # 設定ファイルで指定したMediaPipeモデルのパスを取得する
     model_path = current_app.config["FACE_LANDMARKER_MODEL"]
 
-    # ブラウザから普通にページを開いた場合は登録画面を返す。
+    # ブラウザから普通にページを開いた場合は登録画面
     if request.method == "GET":
         return render_template(
             "auth/register.html",
             model_exists=model_path.exists(),
         )
 
-    # JavaScriptが送信したJSONをPythonの辞書へ変換する。
+    # JavaScriptが送信したJSONをPythonの辞書へ変換する
     data = request.get_json(silent=True) or {}
     password = str(data.get("password", ""))
 
-    # 7セット分の128次元顔特徴量が入る。
+    # 7セット分の128次元顔特徴量を入れる
     face_embedding = data.get("face_embedding")
 
-    # パスワード未入力ならHTTP 400で処理を終了する。
+    # パスワード未入力ならHTTP 400表示
     if not password:
         return jsonify(success=False, message="パスワードを入力してください。"), 400
 
-    # 顔特徴量が「5セット以上」かつ「各セット128個」かを検証する。
+    # 顔特徴量が「5セット以上」かつ「各セット128個」かを検証
     valid_face_templates = (
         isinstance(face_embedding, list)
         and len(face_embedding) >= 5
@@ -65,8 +65,8 @@ def register():
         return jsonify(success=False, message="顔の数値を登録できませんでした。"), 400
 
     try:
-        # SQLiteのText列へ保存できるよう、顔特徴量をJSON文字列へ変換する。
-        # 小数第6位にそろえてDBサイズを抑える。
+        # SQLiteのText列へ保存できるよう、顔特徴量をJSON文字列へ変換
+        # 小数第6位にそろえる
         embedding_json = json.dumps(
             [
                 [round(float(value), 6) for value in template]
@@ -77,8 +77,8 @@ def register():
         return jsonify(success=False, message="顔の数値が正しくありません。"), 400
 
     try:
-        # 最初は重複しない仮IDでUserを作成する。
-        # passwordプロパティへ代入するとモデル側でハッシュ化される。
+        # 最初は重複しない仮IDでUserを作成
+        # passwordプロパティへ代入しモデル側でハッシュ化
         user = User(
             login_id=f"pending-{uuid.uuid4().hex}",
             password=password,
@@ -86,25 +86,25 @@ def register():
         )
         db.session.add(user)
 
-        # INSERTだけを先に実行し、自動採番されたuser.idを取得する。
-        # commitはまだ行わない。
+        # INSERTだけを先に実行し、自動採番されたuser.idを取得
         db.session.flush()
 
-        # 内部IDをU000001形式へ変換し、正式なログインIDにする。
+        # 内部IDをU000001形式へ変換し、正式なログインIDにする
         user.login_id = f"U{user.id:06d}"
+        # ここでコミット
         db.session.commit()
     except IntegrityError:
-        # 登録途中でDBエラーが起きた場合、変更を取り消す。
+        # 登録途中でDBエラーが起きた場合、ロールバック
         db.session.rollback()
         return jsonify(success=False, message="IDの発行に失敗しました。"), 409
 
-    # 登録直後のユーザーをログイン済みにする。
+    # 登録直後のユーザーをログイン済みにする
     login_user(user)
 
-    # どの方法でログインしたかをセッションへ記録する。
+    # どの方法でログインしたかをセッションへ記録
     session["auth_method"] = "register"
 
-    # JavaScriptへ発行IDと次の移動先をJSONで返す。
+    # JavaScriptへ発行IDと次の移動先をJSONで返す
     return jsonify(
         success=True,
         login_id=user.login_id,
@@ -119,14 +119,14 @@ def password_login():
     data = request.get_json(silent=True) or {}
     login_id = str(data.get("login_id", "")).strip()
     password = str(data.get("password", ""))
-    # 入力されたIDに対応するユーザーをDBから検索する。
+    # 入力されたIDに対応するユーザーをDBから検索する
     user = User.find_by_login_id(login_id)
 
-    # ユーザーが存在しない、またはパスワード不一致なら拒否する。
+    # ユーザーが存在しない、またはパスワード不一致なら拒否
     if user is None or not user.verify_password(password):
         return jsonify(success=False, message="IDまたはパスワードが違います。"), 401
 
-    # Flask-LoginがセッションへユーザーIDを保存する。
+    # Flask-LoginがセッションへユーザーIDを保存
     login_user(user)
     session["auth_method"] = "password"
     return jsonify(success=True, redirect=url_for("training.modes"))

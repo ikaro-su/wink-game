@@ -2,8 +2,7 @@ from flask import Blueprint, redirect, render_template, session, url_for
 from flask_login import current_user, login_required
 
 
-# トレーニング関係のURLをまとめるBlueprint。
-# このBlueprint内のURLにはすべて/trainingが先頭に付く。
+# トレーニング関係のURLをまとめるBlueprint
 training = Blueprint(
     "training",
     __name__,
@@ -12,8 +11,7 @@ training = Blueprint(
 )
 
 
-# 選択できる練習モードの名前と説明。
-# 新しいモードを追加する場合は、ここへ項目を追加する。
+# 選択できる練習モードの名前と説明
 AVAILABLE_MODES = {
     "interview": {
         "name": "就職面接モード",
@@ -37,19 +35,19 @@ def modes():
 
     return render_template(
         "training/modes.html",
-        # current_userはFlask-Loginが復元したログイン中ユーザー。
+        # current_userはFlask-Loginが復元したログイン中ユーザー
         login_id=current_user.login_id,
-        # 顔・パスワードなど、どの方法でログインしたかを表示用に渡す。
+        # 顔・パスワードなど、どの方法でログインしたかを表示用に渡す
         auth_method=session.get("auth_method", ""),
     )
 
 
+# 拡張性の確保と不明なモードからの接続を防ぐ
 @training.get("training/<mode>")
 @login_required
 def training_practice(mode):
-    """URLで指定されたモードのリアルタイム採点画面を表示する。"""
 
-    # 例：/training/interviewならinterviewの設定を取得する。
+    # 選択されたモードをURLから取得
     selected_mode = AVAILABLE_MODES.get(mode)
 
     # 存在しないモード名の場合は、モード選択画面へ戻す。
@@ -65,9 +63,7 @@ def training_practice(mode):
 @training.get("service/<mode>")
 @login_required
 def service_practice(mode):
-    """URLで指定されたモードのリアルタイム採点画面を表示する。"""
 
-    # 例：/training/interviewならinterviewの設定を取得する。
     selected_mode = AVAILABLE_MODES.get(mode)
 
     # 存在しないモード名の場合は、モード選択画面へ戻す。
@@ -83,9 +79,7 @@ def service_practice(mode):
 @training.get("photo/<mode>")
 @login_required
 def photo_practice(mode):
-    """URLで指定されたモードのリアルタイム採点画面を表示する。"""
 
-    # 例：/training/interviewならinterviewの設定を取得する。
     selected_mode = AVAILABLE_MODES.get(mode)
 
     # 存在しないモード名の場合は、モード選択画面へ戻す。

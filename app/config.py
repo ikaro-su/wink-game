@@ -7,7 +7,7 @@ basedir = Path(__file__).parent.parent
 
 
 class BaseConfig:
-    """すべての環境で共通して使う設定。"""
+    #すべての環境で共通して使う設定。
 
     # セッションCookieの署名に使う秘密鍵。
     # AWS公開時は環境変数SECRET_KEYへ推測困難な値を設定する。
